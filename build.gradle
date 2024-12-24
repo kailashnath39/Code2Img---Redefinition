@@ -1,0 +1,32 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+repositories {
+    mavenCentral()  // Central repository
+    maven { url 'https://jitpack.io' }  // In case you use any GitHub-based libraries
+}
+
+dependencies {
+    // JavaParser for parsing and manipulating Java code
+    implementation 'com.github.javaparser:javaparser-core:3.25.3'
+
+    // Guava for utilities like ImmutableMap and Hashing
+    implementation 'com.google.guava:guava:31.1-jre'
+
+    // JUnit for unit testing (optional, but often needed)
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'org.example.Main'  // Update with the actual main class
+    }
+}
