@@ -11,6 +11,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 
 public class Main {
+
+//    add all paths according to your system.
     public static String txlPath = "";
     public static String dirPath = "";
 
