@@ -135,11 +135,11 @@ public class Func {
     }
 
     private void printNormalizedLines(List<String> normLines) {
-        System.out.println("----------------------------------------");
+        System.out.println("-----------------------------------------");
         for (String s: normLines) {
             System.out.println(s);
         }
-        System.out.println("----------------------------------------");
+        System.out.println("-----------------------------------------");
     }
     private void setNLineHash(List<String> normLines) {
 //        printNormalizedLines(normLines);
