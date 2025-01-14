@@ -3,12 +3,8 @@ package org.example;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.printer.XmlPrinter;
-import com.github.javaparser.printer.YamlPrinter;
 import com.google.common.hash.Hashing;
 
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.util.*;
 
 import static org.example.Main.*;
@@ -17,6 +13,10 @@ public class Func {
 
     public int funcId;
 
+//    added for result analysis
+    public int resFuncId;
+
+//    for debugging purpose: showing what functions are there to be shown.
     public String funcSig;
     public String fileName;
     public int funcLen;

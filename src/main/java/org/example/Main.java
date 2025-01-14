@@ -13,10 +13,10 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Main {
 
 //    add all paths according to your system.
-    public static String txlPath = "";
-    public static String dirPath = "";
+    public static String txlPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\txl\\java-extract-functions.txl";
+    public static String dirPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\data\\input";
 
-    public static String outputPath = "";
+    public static String outputPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\output";
     public static int N = 3;
 
     public static int MINIMAL_FUNC_LINE_NUM = 6;
@@ -33,8 +33,16 @@ public class Main {
         data.add(func);
     }
 
-    public static void main(String[] args) {
+    public static synchronized void addFunc(Func func, List<Func> data, int id) {
+        func.resFuncId = id;
+        func.setFuncId(data.size());
+        data.add(func);
+    }
 
+
+
+    public static void main(String[] args) {
+//        System.out.println("Ok");
 
 //        N = Integer.parseInt(args[0]);
 //        filter_score = Float.parseFloat(args[1]);
@@ -112,7 +120,7 @@ public class Main {
             t.setFuncId(j);
             invertedIndex.update(detectTaskList.getItem(j));
 
-            System.out.println(t.funcId + "  " + t.funcSig);
+            System.out.println(t.funcId + "  " + t.funcLen + " " + t.resFuncId + " " + t.funcSig);
 
 
         }
@@ -153,7 +161,8 @@ public class Main {
                         totalClonePairsNum.addAndGet(res.size());
                         try (BufferedWriter bw = new BufferedWriter(new FileWriter(writeFile, true))) {
                             for (var id : res) {
-                                bw.write(funcC.funcId + "," + id);
+                                bw.write(funcC.resFuncId + "," + detectTaskList.getItem(id).resFuncId);
+                                bw.write(funcC.funcId + ", " + id);
                                 bw.newLine();
                                 bw.write(funcC.funcSig);
                                 bw.newLine();
@@ -227,11 +236,13 @@ public class Main {
             int el = 0;
             StringBuilder sb = new StringBuilder();
             int min_length = Math.max(MINIMAL_FUNC_LINE_NUM, N);
+            int ResId = 0;
 
             while ((line = br.readLine()) != null) {
                 if (line.startsWith("<source file=")) {
                     var ss = line.split(" ");
                     fn = ss[1].substring(6, ss[1].length() - 1);
+                    ResId = Integer.parseInt(fn.substring(fn.lastIndexOf("\\")+1, fn.length()-5));
                     sl = Integer.parseInt(ss[2].substring(11, ss[2].length() - 1));
                     el = Integer.parseInt(ss[3].substring(9, ss[3].length() - 2));
                     sb = new StringBuilder();
@@ -246,7 +257,7 @@ public class Main {
 
                             if (func.funcLen >= min_length) {
                                 func.funcSig = funName;
-                                addFunc(func, data);
+                                addFunc(func, data, ResId);
                                 ret++;
                             }
                         } catch (Exception e) {
@@ -254,7 +265,8 @@ public class Main {
                         }
                     }
                 } else {
-                    if(line.startsWith("public")) {
+//                    custom condition for recording the function signature
+                    if(line.startsWith("public") || line.startsWith("private") || line.startsWith("protected") || line.startsWith("default")) {
                         funName = line;
                     }
                     sb.append(line).append("\n");
