@@ -10,30 +10,35 @@ import java.util.concurrent.atomic.AtomicLong;
 
 
 
+
 public class Main {
 
-//    add all paths according to your system.
+    //    add all paths according to your system.
     public static String txlPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\txl\\java-extract-functions.txl";
-    public static String dirPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\data\\input";
+//    public static String dirPath = "D:\\COLLEGE\\TERM PAPER\\dataset\\sample";
+
+    public static String dirPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\data\\SmallInput";
 
     public static String outputPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\output";
     public static int N = 3;
 
-    public static int MINIMAL_FUNC_LINE_NUM = 6;
+    public static int MINIMAL_FUNC_LINE_NUM = 4;
 
     public static float filter_score = 0.1f;
     public static float verify_score = 0.7f;
-//    public static float final_verify_score = 0.015f;
+    //    public static float final_verify_score = 0.015f;
     public static double vector_dis_verify_score = 0.9;
 
     public static int threadNum = 8;
 
     public static synchronized void addFunc(Func func, List<Func> data) {
+
         func.setFuncId(data.size());
         data.add(func);
     }
 
     public static synchronized void addFunc(Func func, List<Func> data, int id) {
+
         func.resFuncId = id;
         func.setFuncId(data.size());
         data.add(func);
@@ -41,7 +46,7 @@ public class Main {
 
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 //        System.out.println("Ok");
 
 //        N = Integer.parseInt(args[0]);
@@ -121,21 +126,25 @@ public class Main {
             invertedIndex.update(detectTaskList.getItem(j));
 
             System.out.println(t.funcId + "  " + t.funcLen + " " + t.resFuncId + " " + t.funcSig);
-
-
         }
+
+//        for detailed analysis
+//        invertedIndex.printIndexIntoFile();
 
 
         ArrayList<Thread> detectThreadList = new ArrayList<>();
+
         for (int j = 0; j < threadNum; j += 1) {
             int threadId = j;
             var thread = new Thread(() -> {
                 var funcC = detectTaskList.getTask();
                 File writeFile = new File(outputPath + File.separator + "output" + threadId + ".csv");
                 while (funcC != null) {
+
                     HashSet<Integer> cloneCandidate = new HashSet<>();
                     List<Integer> res = new ArrayList<>();
                     for (var nLineHash : funcC.nLineHash) {
+                        System.out.println(nLineHash);
                         var candidates = invertedIndex.get(nLineHash);
                         if (candidates != null) {
                             for (var c : candidates) {
@@ -162,13 +171,13 @@ public class Main {
                         try (BufferedWriter bw = new BufferedWriter(new FileWriter(writeFile, true))) {
                             for (var id : res) {
                                 bw.write(funcC.resFuncId + "," + detectTaskList.getItem(id).resFuncId);
-                                bw.write(funcC.funcId + ", " + id);
-                                bw.newLine();
-                                bw.write(funcC.funcSig);
-                                bw.newLine();
-                                bw.write(detectTaskList.getItem(id).funcSig);
-                                bw.newLine();
-                                bw.write("-------------------------------------------------");
+//                                bw.write(funcC.funcId + ", " + id);
+//                                bw.newLine();
+//                                bw.write(funcC.funcSig);
+//                                bw.newLine();
+//                                bw.write(detectTaskList.getItem(id).funcSig);
+//                                bw.newLine();
+//                                bw.write("-------------------------------------------------");
                                 bw.newLine();
                             }
                             bw.flush();
@@ -230,6 +239,7 @@ public class Main {
         int ret = 0;
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec(cmd).getInputStream(), StandardCharsets.UTF_8));
+
             String line;
             String fn = "";
             int sl = 0;
@@ -254,6 +264,7 @@ public class Main {
                             CompilationUnit cu = StaticJavaParser.parse(code);
 
                             Func func = new Func(fn, cu);
+
 
                             if (func.funcLen >= min_length) {
                                 func.funcSig = funName;

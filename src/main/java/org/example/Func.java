@@ -145,6 +145,7 @@ public class Func {
 //        printNormalizedLines(normLines);
         List<Long> nLineHash = new ArrayList<>();
         int len = normLines.size() - N + 1;
+
         for (int i = 0; i < len; i++) {
             StringBuilder tmp = new StringBuilder();
             for (int j = 0; j < N; j++) {
@@ -154,4 +155,6 @@ public class Func {
         }
         this.nLineHash = nLineHash;
     }
+
+
 }
