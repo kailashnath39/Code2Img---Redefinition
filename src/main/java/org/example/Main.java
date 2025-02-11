@@ -133,7 +133,6 @@ public class Main {
 
 
         ArrayList<Thread> detectThreadList = new ArrayList<>();
-
         for (int j = 0; j < threadNum; j += 1) {
             int threadId = j;
             var thread = new Thread(() -> {
