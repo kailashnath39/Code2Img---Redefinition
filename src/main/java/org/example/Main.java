@@ -9,8 +9,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 
-
-
 public class Main {
 
     //    add all paths according to your system.
@@ -22,14 +20,14 @@ public class Main {
     public static String outputPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\output";
     public static int N = 3;
 
-    public static int MINIMAL_FUNC_LINE_NUM = 4;
+    public static int MINIMAL_FUNC_LINE_NUM = 6;
 
     public static float filter_score = 0.1f;
     public static float verify_score = 0.7f;
-    //    public static float final_verify_score = 0.015f;
     public static double vector_dis_verify_score = 0.9;
 
     public static int threadNum = 8;
+
 
     public static synchronized void addFunc(Func func, List<Func> data) {
 
@@ -47,16 +45,16 @@ public class Main {
 
 
     public static void main(String[] args) throws IOException {
-//        System.out.println("Ok");
+        System.out.println("Ok");
 
-//        N = Integer.parseInt(args[0]);
-//        filter_score = Float.parseFloat(args[1]);
-//        verify_score = Float.parseFloat(args[2]);
-//        vector_dis_verify_score = Double.parseDouble(args[3]);
-//        threadNum = Integer.parseInt(args[4]);
-//        dirPath = args[5];
-//        outputPath = args[6];
-//        txlPath = args[7];
+        N = Integer.parseInt(args[0]);
+        filter_score = Float.parseFloat(args[1]);
+        verify_score = Float.parseFloat(args[2]);
+        vector_dis_verify_score = Double.parseDouble(args[3]);
+        threadNum = Integer.parseInt(args[4]);
+        dirPath = args[5];
+        outputPath = args[6];
+        txlPath = args[7];
 
 
         System.out.println("N: " + N);
@@ -70,6 +68,9 @@ public class Main {
 
 
         long startTime = System.currentTimeMillis();
+
+
+        System.out.println(";");
         File dir = new File(dirPath);
         var fileList = getAllJavaFiles(dir);
         if (fileList == null) {
@@ -120,12 +121,28 @@ public class Main {
         TaskList<Func> detectTaskList = new TaskList<>(data);
         InvertedIndex invertedIndex = new InvertedIndex();
         detectTaskList.getItems().sort(Comparator.comparingInt(o -> o.funcLen));
+
         for (int j = 0; j < detectTaskList.size(); j++) {
             Func t = detectTaskList.getItem(j);
             t.setFuncId(j);
+//            System.out.println(t.resFuncId + ": " + j);
             invertedIndex.update(detectTaskList.getItem(j));
+            detectTaskList.getItem(j).copyVectorIntoFile();
+            detectTaskList.getItem(j).copyNLineHashes();
+            System.out.println(t.funcId + " " + t.resFuncId + " " + t.funcSig);
+        }
 
-            System.out.println(t.funcId + "  " + t.funcLen + " " + t.resFuncId + " " + t.funcSig);
+
+
+
+        String invertedIndexString = new String(invertedIndex.getDictionary());
+        invertedIndexString = invertedIndexString.replaceAll("(?<!\\[[^\\]]*),(?![^\\[]*\\])|[{}]+", "\n");
+        try(FileWriter fw = new FileWriter("C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\DetailedInspection\\InvertedIndex.txt")) {
+            fw.write(invertedIndexString);
+        }
+        catch (IOException io) {
+            System.out.println(io);
+            System.exit(0);
         }
 
 //        for detailed analysis
@@ -137,29 +154,36 @@ public class Main {
             int threadId = j;
             var thread = new Thread(() -> {
                 var funcC = detectTaskList.getTask();
+
                 File writeFile = new File(outputPath + File.separator + "output" + threadId + ".csv");
                 while (funcC != null) {
 
                     HashSet<Integer> cloneCandidate = new HashSet<>();
                     List<Integer> res = new ArrayList<>();
                     for (var nLineHash : funcC.nLineHash) {
-                        System.out.println(nLineHash);
                         var candidates = invertedIndex.get(nLineHash);
+//                        System.out.println("Thread id: " + threadId + " " + funcC.funcId + " " +  candidates);
                         if (candidates != null) {
                             for (var c : candidates) {
                                 if (c > funcC.funcId) {
                                     cloneCandidate.add(c);
                                 }
                             }
+//                            System.out.println(funcC.funcId + ": " + candidates);
                         }
                     }
+//                    System.out.println(funcC.funcId + ": " + cloneCandidate);
                     for (var candidate : cloneCandidate) {
+//                        System.out.println("some clenes are there");
                         var funcB = detectTaskList.getItem(candidate);
                         var nLineVerifyScore = Func.nLineVerify(funcB, funcC, invertedIndex);
+                        System.out.println(funcC.resFuncId + ", " + funcB.resFuncId + " -> " + "nLineVerifyScore: " + nLineVerifyScore);
                         if (nLineVerifyScore >= verify_score) {
+                            System.out.println(funcC.funcId + ", " + candidate + " -> " + nLineVerifyScore);
                             res.add(funcB.funcId);
                         } else if (nLineVerifyScore >= filter_score) {
                             var vectorVerifyScore = Func.normVecGenJacVerify(funcB, funcC);
+                            System.out.println(funcC.resFuncId + ", " + funcB.resFuncId + " -> " + "vectorVerifyScore: " + vectorVerifyScore);
                             if (vectorVerifyScore >= vector_dis_verify_score) {
                                 res.add(funcB.funcId);
                             }
@@ -168,6 +192,7 @@ public class Main {
                     if (!res.isEmpty()) {
                         totalClonePairsNum.addAndGet(res.size());
                         try (BufferedWriter bw = new BufferedWriter(new FileWriter(writeFile, true))) {
+//                            System.out.println(funcC.funcId + ": " + res);
                             for (var id : res) {
                                 bw.write(funcC.resFuncId + "," + detectTaskList.getItem(id).resFuncId);
 //                                bw.write(funcC.funcId + ", " + id);

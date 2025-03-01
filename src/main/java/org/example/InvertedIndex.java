@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class InvertedIndex {
-    private final HashMap<Long, HashSet<Integer>> m = new HashMap<>();
+     final HashMap<Long, HashSet<Integer>> m = new HashMap<>();
 
     synchronized public void update(Func func) {
         for (var hash : func.nLineHash) {
@@ -34,20 +34,8 @@ public class InvertedIndex {
         return m.size();
     }
 
-    public void printIndexIntoFile() throws IOException {
-        try(FileWriter fw = new FileWriter("C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\DetailedInspection\\InvertedIndex.txt", true)) {
-            m.forEach((id, hashValues) -> {
-                try {
-                    fw.write("Func Id: " + id + " -> " + Arrays.toString(hashValues.toArray()) + "\n");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-        catch (IOException io) {
-            System.out.println(io);
-            System.exit(0);
-        }
 
+    public String getDictionary() {
+        return m.toString();
     }
 }

@@ -5,6 +5,8 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.*;
 import com.google.common.hash.Hashing;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 import static org.example.Main.*;
@@ -25,7 +27,9 @@ public class Func {
     public int edgeNum;
     public List<Long> nLineHash;
 
-    public Func(String fileName, CompilationUnit cu) {
+    public HashMap<Long, String> hashContent = new HashMap<>();
+
+    public Func(String fileName, CompilationUnit cu) throws IOException {
         this.fileName = fileName;
         setNLineHashAndVector(cu);
     }
@@ -110,10 +114,8 @@ public class Func {
                 var index = edgeType2Num.get(str1 + str2) == null ? 0 : (int) edgeType2Num.get(str1 + str2);
                 vector[index] += 1;
                 totalEdges += 1;
-
             }
         }
-
 
         var lines = cu.toString().split("\\r?\\n");
 
@@ -151,10 +153,45 @@ public class Func {
             for (int j = 0; j < N; j++) {
                 tmp.append(normLines.get(i + j));
             }
-            nLineHash.add(Hashing.sipHash24().hashBytes(tmp.toString().getBytes()).asLong());
+            Long hashValue = Hashing.sipHash24().hashBytes(tmp.toString().getBytes()).asLong();
+            hashContent.put(hashValue, tmp.toString());
+            nLineHash.add(hashValue);
         }
         this.nLineHash = nLineHash;
     }
+
+    public void copyVectorIntoFile() throws IOException {
+        FileWriter fw = new FileWriter("C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\DetailedInspection\\Vectors\\" + resFuncId + ".txt");
+        try {
+            for (int i = 0; i < edgeTypeNum; i++) {
+                if (vector[i] > 0) {
+                    String buffer = edgeNum2Type.get(i + 1) + ": " + vector[i] + "\n";
+                    fw.write(buffer);
+                }
+            }
+            fw.close(); // Important to close FileWriter in the finally block (or try-with-resources in newer Java versions)
+        } catch (IOException e) {
+            System.err.println("Error writing to file: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    public void copyNLineHashes() throws IOException {
+        FileWriter fw = new FileWriter("C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\DetailedInspection\\NLineHashes\\" + resFuncId + ".txt");
+        try {
+//            System.out.println("helllo");
+            for(Long hashValue: nLineHash) {
+//                System.out.println(hashContent.get(hashValue) + "\n----------------------------------------\n");
+                fw.write(hashValue.toString() + "\n");
+//                fw.write(hashContent.get(hashValue) + "\n----------------------------------------\n");
+            }
+            fw.close(); // Important to close FileWriter in the finally block (or try-with-resources in newer Java versions)
+        } catch (IOException e) {
+            System.err.println("Error writing to file: " + e.getMessage());
+            throw e;
+        }
+    }
+
 
 
 }
