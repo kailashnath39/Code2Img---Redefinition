@@ -1,10 +1,9 @@
 package org.example;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-public class TaskList<T>{
+public class TaskList<T> {
     private final List<T> items;
 
     private int pos;
@@ -19,17 +18,12 @@ public class TaskList<T>{
         pos = 0;
     }
 
-
     public synchronized T getTask() {
         if (pos >= items.size()) {
             return null;
         } else {
             return items.get(pos++);
         }
-    }
-
-    public synchronized void reset() {
-        pos = 0;
     }
 
     public T getItem(int index) {
@@ -43,5 +37,4 @@ public class TaskList<T>{
     public int size() {
         return items.size();
     }
-
 }

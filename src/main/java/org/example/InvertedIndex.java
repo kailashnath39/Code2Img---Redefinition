@@ -1,9 +1,5 @@
 package org.example;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -30,24 +26,4 @@ public class InvertedIndex {
         return m.get(hash);
     }
 
-    public int size() {
-        return m.size();
-    }
-
-    public void printIndexIntoFile() throws IOException {
-        try(FileWriter fw = new FileWriter("C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\DetailedInspection\\InvertedIndex.txt", true)) {
-            m.forEach((id, hashValues) -> {
-                try {
-                    fw.write("Func Id: " + id + " -> " + Arrays.toString(hashValues.toArray()) + "\n");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-        catch (IOException io) {
-            System.out.println(io);
-            System.exit(0);
-        }
-
-    }
 }

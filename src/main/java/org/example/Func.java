@@ -3,41 +3,45 @@ package org.example;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.printer.XmlPrinter;
+import com.github.javaparser.printer.YamlPrinter;
 import com.google.common.hash.Hashing;
 
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.*;
 
 import static org.example.Main.*;
 import static org.example.TypeMappings.*;
+
 public class Func {
 
     public int funcId;
-
-//    added for result analysis
-    public int resFuncId;
-
-//    for debugging purpose: showing what functions are there to be shown.
-    public String funcSig;
     public String fileName;
     public int funcLen;
+    public float[][] image;
+    public int[][] intImage;
+    public short[][] matrix;
     public short[] vector;
 
+    public int startLineNum, endLineNum;
     public int edgeNum;
     public List<Long> nLineHash;
 
-    public Func(String fileName, CompilationUnit cu) {
+
+
+
+    public Func(String fileName, CompilationUnit cu,  int startLineNum, int endLineNum) {
         this.fileName = fileName;
+        this.startLineNum = startLineNum;
+        this.endLineNum = endLineNum;
         setNLineHashAndVector(cu);
     }
 
     public static float nLineVerify(Func funcA, Func funcB, InvertedIndex invertedIndex) {
         var res = commonNLine(funcA, funcB, invertedIndex);
-
-//        min function and max function will give same results mostly.
         int min_len = Math.min(funcA.funcLen, funcB.funcLen) - N + 1;
         return 1.0f * res / min_len;
-//        int max_len = Math.max(funcA.funcLen, funcB.funcLen) - N + 1;
-//        return 1.0f * res / max_len;
     }
 
     public static int commonNLine(Func funcA, Func funcB, InvertedIndex invertedIndex) {
@@ -54,6 +58,7 @@ public class Func {
         }
         return res;
     }
+
 
     public static double normVecGenJacVerify(Func funcA, Func funcB) {
         var vec1 = funcA.vector;
@@ -78,8 +83,11 @@ public class Func {
         Queue<Node> queue = new LinkedList<>();
         queue.add(cu);
         int totalEdges = 0;
+//        Map<String, Integer> ret = new HashMap<>();
         while (!queue.isEmpty()) {
+//            var head = stack.pop();
             var head = queue.poll();
+//            var t1 = type2Int1.get(head.getClass().getSimpleName()) == null ? 0 : (int) type2Int1.get(head.getClass().getSimpleName());
             var str1 = head.getClass().getSimpleName();
             var children = head.getChildNodes();
             if (children.isEmpty()) {
@@ -105,6 +113,7 @@ public class Func {
                 continue;
             }
             for (var child : children) {
+//                stack.push(child);
                 queue.offer(child);
                 var str2 = child.getClass().getSimpleName();
                 var index = edgeType2Num.get(str1 + str2) == null ? 0 : (int) edgeType2Num.get(str1 + str2);
@@ -114,9 +123,7 @@ public class Func {
             }
         }
 
-
         var lines = cu.toString().split("\\r?\\n");
-
         for (int i = 2; i < lines.length - 1; i++) {
             var line = lines[i].strip();
             if (!line.isEmpty()) {
@@ -134,27 +141,23 @@ public class Func {
         this.funcId = funcId;
     }
 
-    private void printNormalizedLines(List<String> normLines) {
-        System.out.println("-----------------------------------------");
-        for (String s: normLines) {
-            System.out.println(s);
-        }
-        System.out.println("-----------------------------------------");
-    }
     private void setNLineHash(List<String> normLines) {
-//        printNormalizedLines(normLines);
         List<Long> nLineHash = new ArrayList<>();
         int len = normLines.size() - N + 1;
-
         for (int i = 0; i < len; i++) {
             StringBuilder tmp = new StringBuilder();
             for (int j = 0; j < N; j++) {
+//                tmp = tmp.concat(normLines.get(i + j));
                 tmp.append(normLines.get(i + j));
             }
+//            nLineHash.add(Hashing.murmur3_128().hashBytes(tmp.toString().getBytes()));
+//            nLineHash.add(tmp.toString().hashCode());
             nLineHash.add(Hashing.sipHash24().hashBytes(tmp.toString().getBytes()).asLong());
+//            nLineHash.add(Hashing.murmur3_32_fixed().hashBytes(tmp.toString().getBytes()).asInt());
+//            nLineHash.add(XXHashFactory.fastestInstance().hash64().hash(ByteBuffer.wrap(tmp.toString().getBytes()), seed));
         }
         this.nLineHash = nLineHash;
+//        return nLineHash;
     }
-
 
 }

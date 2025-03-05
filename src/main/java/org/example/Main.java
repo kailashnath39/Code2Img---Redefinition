@@ -2,87 +2,68 @@ package org.example;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.printer.XmlPrinter;
+import com.github.javaparser.printer.YamlPrinter;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-
+import static org.example.TypeMappings.*;
 
 
 public class Main {
+    public static String txlPath = "/root/data/nline_box/txl/java-extract-functions.txl";
+    public static String dirPath = "/root/data/nline_box/data/id2sourcecode";
 
-    //    add all paths according to your system.
-    public static String txlPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\txl\\java-extract-functions.txl";
-//    public static String dirPath = "D:\\COLLEGE\\TERM PAPER\\dataset\\sample";
+    public static String outputPath = "/root/data/nline_box/data/output";
+    public static int N = 2;
 
-    public static String dirPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\data\\SmallInput";
-
-    public static String outputPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\output";
-    public static int N = 3;
-
-    public static int MINIMAL_FUNC_LINE_NUM = 4;
+    public static int MINIMAL_FUNC_LINE_NUM = 6;
 
     public static float filter_score = 0.1f;
     public static float verify_score = 0.7f;
-    //    public static float final_verify_score = 0.015f;
-    public static double vector_dis_verify_score = 0.9;
+    public static float final_verify_score = 0.015f;
+    public static double vector_dis_verify_score = 0.85;
 
     public static int threadNum = 8;
 
     public static synchronized void addFunc(Func func, List<Func> data) {
-
         func.setFuncId(data.size());
         data.add(func);
     }
 
-    public static synchronized void addFunc(Func func, List<Func> data, int id) {
+    public static void main(String[] args) {
 
-        func.resFuncId = id;
-        func.setFuncId(data.size());
-        data.add(func);
-    }
+        N = Integer.parseInt(args[0]);
+        filter_score = Float.parseFloat(args[1]);
+        verify_score = Float.parseFloat(args[2]);
+        vector_dis_verify_score = Double.parseDouble(args[3]);
+        threadNum = Integer.parseInt(args[4]);
+        dirPath = args[5];
+        outputPath = args[6];
+        txlPath = args[7];
 
-
-
-    public static void main(String[] args) throws IOException {
-//        System.out.println("Ok");
-
-//        N = Integer.parseInt(args[0]);
-//        filter_score = Float.parseFloat(args[1]);
-//        verify_score = Float.parseFloat(args[2]);
-//        vector_dis_verify_score = Double.parseDouble(args[3]);
-//        threadNum = Integer.parseInt(args[4]);
-//        dirPath = args[5];
-//        outputPath = args[6];
-//        txlPath = args[7];
-
-
-        System.out.println("N: " + N);
-        System.out.println("filter_score: " + filter_score);
-        System.out.println("verify_score: " + verify_score);
-        System.out.println("vector_dis_verify_score: " + vector_dis_verify_score);
-        System.out.println("threadNum: " + threadNum);
-        System.out.println("dirPath: " + dirPath);
-        System.out.println("outputPath: " + outputPath);
-        System.out.println("txlPath: " + txlPath);
+        System.out.println(N);
+        System.out.println(filter_score);
+        System.out.println(verify_score);
+        System.out.println(vector_dis_verify_score);
+        System.out.println(threadNum);
+        System.out.println(dirPath);
+        System.out.println(outputPath);
+        System.out.println(txlPath);
 
 
         long startTime = System.currentTimeMillis();
         File dir = new File(dirPath);
         var fileList = getAllJavaFiles(dir);
         if (fileList == null) {
-            System.out.println("Not found any input file");
             System.exit(-1);
         }
-        else {
-            System.out.println("found some input files");
-            for(var i: fileList) {
-                System.out.println(i);
-            }
-        }
-        System.out.println("************************************************");
+
 
         TaskList<String> parseTaskList = new TaskList<>(fileList);
 
@@ -99,8 +80,6 @@ public class Main {
             thread.start();
             parseThreadList.add(thread);
         }
-
-
         for (var thread : parseThreadList) {
             try {
                 thread.join();
@@ -108,42 +87,34 @@ public class Main {
                 e.printStackTrace();
             }
         }
-
-        System.out.println("Number of files: " + fileList.size());
-        System.out.println("Number of functions: " + data.size());
+        System.out.println(fileList.size());
+        System.out.println(data.size());
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
         System.out.println("Parse time: " + totalTime / 1000f);
-
         startTime = System.currentTimeMillis();
         AtomicLong totalClonePairsNum = new AtomicLong();
         TaskList<Func> detectTaskList = new TaskList<>(data);
         InvertedIndex invertedIndex = new InvertedIndex();
         detectTaskList.getItems().sort(Comparator.comparingInt(o -> o.funcLen));
         for (int j = 0; j < detectTaskList.size(); j++) {
-            Func t = detectTaskList.getItem(j);
-            t.setFuncId(j);
+            detectTaskList.getItem(j).setFuncId(j);
             invertedIndex.update(detectTaskList.getItem(j));
-
-            System.out.println(t.funcId + "  " + t.funcLen + " " + t.resFuncId + " " + t.funcSig);
         }
-
-//        for detailed analysis
-//        invertedIndex.printIndexIntoFile();
-
-
         ArrayList<Thread> detectThreadList = new ArrayList<>();
         for (int j = 0; j < threadNum; j += 1) {
             int threadId = j;
             var thread = new Thread(() -> {
+                String file1Dir;
+                String file2Dir;
+                String file1Name;
+                String file2Name;
                 var funcC = detectTaskList.getTask();
-                File writeFile = new File(outputPath + File.separator + "output" + threadId + ".csv");
+                File writeFile = new File(outputPath + File.separator + "clones" + threadId);
                 while (funcC != null) {
-
                     HashSet<Integer> cloneCandidate = new HashSet<>();
                     List<Integer> res = new ArrayList<>();
                     for (var nLineHash : funcC.nLineHash) {
-                        System.out.println(nLineHash);
                         var candidates = invertedIndex.get(nLineHash);
                         if (candidates != null) {
                             for (var c : candidates) {
@@ -153,35 +124,48 @@ public class Main {
                             }
                         }
                     }
+
                     for (var candidate : cloneCandidate) {
                         var funcB = detectTaskList.getItem(candidate);
                         var nLineVerifyScore = Func.nLineVerify(funcB, funcC, invertedIndex);
                         if (nLineVerifyScore >= verify_score) {
                             res.add(funcB.funcId);
                         } else if (nLineVerifyScore >= filter_score) {
-                            var vectorVerifyScore = Func.normVecGenJacVerify(funcB, funcC);
+                            var vectorVerifyScore = Func.normVecGenJacVerify(funcB, funcC); 
                             if (vectorVerifyScore >= vector_dis_verify_score) {
                                 res.add(funcB.funcId);
                             }
+
                         }
                     }
                     if (!res.isEmpty()) {
                         totalClonePairsNum.addAndGet(res.size());
                         try (BufferedWriter bw = new BufferedWriter(new FileWriter(writeFile, true))) {
                             for (var id : res) {
-                                bw.write(funcC.resFuncId + "," + detectTaskList.getItem(id).resFuncId);
-//                                bw.write(funcC.funcId + ", " + id);
-//                                bw.newLine();
-//                                bw.write(funcC.funcSig);
-//                                bw.newLine();
-//                                bw.write(detectTaskList.getItem(id).funcSig);
-//                                bw.newLine();
-//                                bw.write("-------------------------------------------------");
+                                String[] temp;
+                                temp = funcC.fileName.split("\\\\");
+                                file1Dir = temp[temp.length-2];
+                                file1Name = temp[temp.length-1];
+
+                                Func funcD = detectTaskList.getItem(id);
+                                temp = funcD.fileName.split("\\\\");
+                                file2Dir = temp[temp.length-2];
+                                file2Name = temp[temp.length-1];
+
+                                bw.write(file1Dir + ",");
+                                bw.write(file1Name + ",");
+                                bw.write(funcC.startLineNum + ",");
+                                bw.write(funcC.endLineNum + ",");
+                                bw.write(file2Dir + ",");
+                                bw.write(file2Name + ",");
+                                bw.write(funcD.startLineNum + ",");
+                                bw.write("" + funcD.endLineNum);
+
                                 bw.newLine();
                             }
                             bw.flush();
                         } catch (Exception e) {
-                            System.out.println("Can not write into " + writeFile);
+                            System.out.println("Can not write into " + writeFile.toString());
                         }
                     }
                     funcC = detectTaskList.getTask();
@@ -203,7 +187,6 @@ public class Main {
         totalTime = endTime - startTime;
         System.out.println("Detection time: " + totalTime / 1000f);
         System.out.println("Clone pairs num: " + totalClonePairsNum);
-
     }
 
     static List<String> getAllJavaFiles(File dir) {
@@ -211,7 +194,6 @@ public class Main {
             System.out.println("Invalid path: " + dirPath);
             return null;
         }
-        System.out.println("Valid path");
         List<String> ret = new ArrayList<>();
         var files = dir.listFiles();
         if (files != null) {
@@ -229,29 +211,21 @@ public class Main {
         return ret;
     }
 
-
     static int parseFile(String filePath, List<Func> data) {
-        // for debugging purpose
-        String funName = "";
-
         String cmd = "txl -q " + filePath + " " + txlPath;
         int ret = 0;
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec(cmd).getInputStream(), StandardCharsets.UTF_8));
-
             String line;
             String fn = "";
             int sl = 0;
             int el = 0;
             StringBuilder sb = new StringBuilder();
             int min_length = Math.max(MINIMAL_FUNC_LINE_NUM, N);
-            int ResId = 0;
-
             while ((line = br.readLine()) != null) {
                 if (line.startsWith("<source file=")) {
                     var ss = line.split(" ");
                     fn = ss[1].substring(6, ss[1].length() - 1);
-                    ResId = Integer.parseInt(fn.substring(fn.lastIndexOf("\\")+1, fn.length()-5));
                     sl = Integer.parseInt(ss[2].substring(11, ss[2].length() - 1));
                     el = Integer.parseInt(ss[3].substring(9, ss[3].length() - 2));
                     sb = new StringBuilder();
@@ -261,30 +235,23 @@ public class Main {
                         try {
                             String code = "class _a {" + sb + "}";
                             CompilationUnit cu = StaticJavaParser.parse(code);
-
-                            Func func = new Func(fn, cu);
-
+                            Func func = new Func(fn, cu, sl, el);
 
                             if (func.funcLen >= min_length) {
-                                func.funcSig = funName;
-                                addFunc(func, data, ResId);
+                                addFunc(func, data);
                                 ret++;
+                            } else {
+//                                System.out.println("Line nums error: " + func.fileName + " " + func.funcLen);
                             }
                         } catch (Exception e) {
                             return 0;
                         }
                     }
                 } else {
-//                    custom condition for recording the function signature
-                    if(line.startsWith("public") || line.startsWith("private") || line.startsWith("protected") || line.startsWith("default")) {
-                        funName = line;
-                    }
                     sb.append(line).append("\n");
                 }
             }
-
         } catch (Exception e) {
-            System.out.println(e);
             return 0;
         }
         return ret;
