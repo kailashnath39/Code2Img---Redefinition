@@ -14,13 +14,10 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Main {
 
     //    add all paths according to your system.
-    public static String txlPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\txl\\java-extract-functions.txl";
-//    public static String dirPath = "D:\\COLLEGE\\TERM PAPER\\dataset\\sample";
-
-    public static String dirPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\data\\SmallInput";
-
-    public static String outputPath = "C:\\Users\\kknat\\IdeaProjects\\code2imgFinal\\output";
-    public static int N = 3;
+    public static String txlPath;
+    public static String dirPath;
+    public static String outputPath;
+    public static int N;
 
     public static int MINIMAL_FUNC_LINE_NUM = 4;
 
@@ -32,7 +29,6 @@ public class Main {
     public static int threadNum = 8;
 
     public static synchronized void addFunc(Func func, List<Func> data) {
-
         func.setFuncId(data.size());
         data.add(func);
     }
@@ -49,14 +45,14 @@ public class Main {
     public static void main(String[] args) throws IOException {
 //        System.out.println("Ok");
 
-//        N = Integer.parseInt(args[0]);
-//        filter_score = Float.parseFloat(args[1]);
-//        verify_score = Float.parseFloat(args[2]);
-//        vector_dis_verify_score = Double.parseDouble(args[3]);
-//        threadNum = Integer.parseInt(args[4]);
-//        dirPath = args[5];
-//        outputPath = args[6];
-//        txlPath = args[7];
+        N = Integer.parseInt(args[0]);
+        filter_score = Float.parseFloat(args[1]);
+        verify_score = Float.parseFloat(args[2]);
+        vector_dis_verify_score = Double.parseDouble(args[3]);
+        threadNum = Integer.parseInt(args[4]);
+        dirPath = args[5];
+        outputPath = args[6];
+        txlPath = args[7];
 
 
         System.out.println("N: " + N);
@@ -128,10 +124,6 @@ public class Main {
             System.out.println(t.funcId + "  " + t.funcLen + " " + t.resFuncId + " " + t.funcSig);
         }
 
-//        for detailed analysis
-//        invertedIndex.printIndexIntoFile();
-
-
         ArrayList<Thread> detectThreadList = new ArrayList<>();
         for (int j = 0; j < threadNum; j += 1) {
             int threadId = j;
@@ -143,7 +135,7 @@ public class Main {
                     HashSet<Integer> cloneCandidate = new HashSet<>();
                     List<Integer> res = new ArrayList<>();
                     for (var nLineHash : funcC.nLineHash) {
-                        System.out.println(nLineHash);
+//                        System.out.println(nLineHash);
                         var candidates = invertedIndex.get(nLineHash);
                         if (candidates != null) {
                             for (var c : candidates) {
@@ -171,12 +163,6 @@ public class Main {
                             for (var id : res) {
                                 bw.write(funcC.resFuncId + "," + detectTaskList.getItem(id).resFuncId);
 //                                bw.write(funcC.funcId + ", " + id);
-//                                bw.newLine();
-//                                bw.write(funcC.funcSig);
-//                                bw.newLine();
-//                                bw.write(detectTaskList.getItem(id).funcSig);
-//                                bw.newLine();
-//                                bw.write("-------------------------------------------------");
                                 bw.newLine();
                             }
                             bw.flush();
